@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KarmaBoard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            text-align: center;
+        }
+        table {
+            margin: 0 auto;
+            border-collapse: collapse;
+            width: 50%;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+            text-align: left;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>KarmaBoard</h1>
+    <table id="karmaTable">
+        <thead>
+            <tr>
+                <th onclick="sortTable(0)">Rank</th>
+                <th onclick="sortTable(1)">User</th>
+                <th onclick="sortTable(2)">Karma</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Karma data will be populated here -->
+        </tbody>
+    </table>
+    <script>
+        let sortOrder = 1; // 1 for ascending, -1 for descending
+
+        async function fetchKarma() {
+            const response = await fetch('/api/karma');
+            const karma = await response.json();
+            const tbody = document.querySelector('#karmaTable tbody');
+            tbody.innerHTML = '';
+
+            // Sort the karma data by karma value in descending order by default
+            karma.sort((a, b) => b.karma - a.karma);
+
+            karma.forEach((entry, index) => {
+                const row = document.createElement('tr');
+                const rankCell = document.createElement('td');
+                rankCell.textContent = index + 1;
+                const userCell = document.createElement('td');
+                userCell.textContent = entry.author;
+                const karmaCell = document.createElement('td');
+                karmaCell.textContent = Math.round(entry.karma); // Multiply by 100 and round to the nearest integer
+                row.appendChild(rankCell);
+                row.appendChild(userCell);
+                row.appendChild(karmaCell);
+                tbody.appendChild(row);
+            });
+        }
+
+
+        function sortTable(columnIndex) {
+            const table = document.getElementById('karmaTable');
+            const rows = Array.from(table.rows).slice(1); // Exclude header row
+            let sortedRows;
+
+            if (columnIndex === 0) {
+                // Sort by rank
+                sortedRows = rows.sort((a, b) => parseInt(a.cells[columnIndex].textContent) - parseInt(b.cells[columnIndex].textContent));
+            } else if (columnIndex === 1) {
+                // Sort by user name
+                sortedRows = rows.sort((a, b) => a.cells[columnIndex].textContent.localeCompare(b.cells[columnIndex].textContent));
+            } else if (columnIndex === 2) {
+                // Sort by karma, toggle order
+                sortedRows = rows.sort((a, b) => sortOrder * (parseFloat(b.cells[columnIndex].textContent) - parseFloat(a.cells[columnIndex].textContent)));
+                sortOrder *= -1; // Toggle sort order
+            }
+
+            const tbody = table.querySelector('tbody');
+            tbody.innerHTML = '';
+            sortedRows.forEach(row => tbody.appendChild(row));
+        }
+
+        setInterval(fetchKarma, 1000);
+    </script>
+</body>
+</html>
